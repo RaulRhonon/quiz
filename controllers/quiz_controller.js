@@ -12,10 +12,21 @@ exports.load = function(req, res, next, quizId) {
 };
 
 //GET /quizes
-exports.index = function(req, res) {  
-  models.Quiz.findAll().then(function(quizes) {
+exports.index = function(req, res) { 
+console.log('Search:'+ req.query.search); 
+  if(req.query.search === '' || req.query.search === undefined){
+    //Si no hay parametro search
+    models.Quiz.findAll().then(function(quizes) {
       res.render('quizes/index.ejs', {quizes: quizes});
     }).catch(function(error){next(error)});
+  } else {
+    //Si lo hay
+    //Tratamos el string
+    var searhing = '%' + req.query.search.replace(" ","%") + '%';
+    models.Quiz.findAll({where: ["pregunta like ?", searhing]}).then(function(quizes) {
+      res.render('quizes/index.ejs', {quizes: quizes});
+    }).catch(function(error){next(error)});
+  }
 };
 
 //GET /quizes/question
