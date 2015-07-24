@@ -6,6 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var partials = require('express-partials');
 var methodOverride = require('method-override');
+var session = require('express-session');
 
 var routes = require('./routes/index');
 
@@ -23,9 +24,44 @@ app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
-app.use(cookieParser());
+app.use(cookieParser('Quiz 2015'));
+app.use(session());
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Helpers dinamicos:
+app.use(function(req, res, next) {
+
+  // guardar path en session.redir para despues de login
+  if (!req.path.match(/\/login|\/logout/)) {
+    req.session.redir = req.path;
+  }
+  // Hacer visible req.session en las vistas
+  res.locals.session = req.session;
+  next();
+});
+
+//Sesiones
+function SessionExpired(req) {
+  var difference = Date.now() - req.session.user.lastAccess;
+
+  console.log('La diferencia es: ' + difference);
+
+  return difference > 120000;
+};
+
+app.use(function(req, res, next) {
+  if (req.session.user) {
+    if (SessionExpired(req)) {
+      delete req.session.user;
+    } else {
+      req.session.user.lastAccess = Date.now();
+    }
+  }
+  next();
+});
+
+
 
 app.use('/', routes);
 
